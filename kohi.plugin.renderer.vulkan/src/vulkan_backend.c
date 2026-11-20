@@ -4509,7 +4509,16 @@ static b8 vulkan_graphics_pipeline_create (vulkan_context *context, const vulkan
 	}
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
 	// Must be enabled for MoltenVK
-	if (input_assembly.topology == PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE_STRIP_BIT || input_assembly.topology == PRIMITIVE_TOPOLOGY_TYPE_LINE_STRIP_BIT) {
+	// crux161:
+	// input_assembly.topology is a VkPrimitiveTopology (Vulkan enum), 
+	// but it is being compared against enum primitive_topology_type (Kohi's internal bitmask/enum). 	// Because -Werror is active, Clang treats -Wenum-compare as a build-breaking
+	// error—and more importantly, the underlying integer values of Kohi's
+	// PRIMITIVE_TOPOLOGY_TYPE_*_BIT flags likely do not match 
+	// Vulkan's VK_PRIMITIVE_TOPOLOGY_* enum values.
+	//
+    input_assembly.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
+	if (input_assembly.topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP ||
+            input_assembly.topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
 		KTRACE("NOT Force-enabling primitiveRestartEnable for macOS");
 		input_assembly.primitiveRestartEnable = VK_TRUE;
 	} else {
